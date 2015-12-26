@@ -5,6 +5,7 @@ var EventEmitter = require('events');
 var uuid = require('node-uuid');
 
 module.exports.CMD_CONNECT = 'CONNECT';
+module.exports.CMD_STOMP = 'STOMP';
 module.exports.CMD_CONNECTED = 'CONNECTED';
 module.exports.CMD_SEND = 'SEND';
 module.exports.CMD_SUBSCRIBE = 'SUBSCRIBE';
