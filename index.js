@@ -3,7 +3,7 @@
  */
 var EventEmitter = require('events');
 var uuid = require('node-uuid');
-
+//var Buffer = require('buffer');
 module.exports.CMD_CONNECT = 'CONNECT';
 module.exports.CMD_STOMP = 'STOMP';
 module.exports.CMD_CONNECTED = 'CONNECTED';
@@ -26,20 +26,41 @@ module.exports.createparser = function (sock) {
     var ret = new EventEmitter();
     ret.buffer = '';
     ret.sock = sock;
+    ret.chunckcount = 0;
     sock.on('data', function (chunck) {
-        ret.addchunck(chunck);
+        //console.log(chunck.toString());
+        ret.addchunck(chunck.toString());
+
     });
 
     ret.addchunck = function (chunk) {
+
         ret.buffer += chunk;
 
+
         if (ret.buffer.indexOf('\0') > -1) {
+
             var msgs = ret.buffer.split('\0');
-            for (var msg of msgs) {
+            for (var i = 0; i < msgs.length - 1; i++) {
+                var msg = msgs[i];
                 if (msg.length > 0) {
+                    //console.log('\n=======\n' + msg + '\n===============\n')
                     var parsedmsg = this.parsemsg(msg);
-                    ret.emit('msg', parsedmsg);
+
+
+                    ret.emit(parsedmsg.cmd, parsedmsg);
                     ret.buffer = ret.buffer.replace(msg + '\0', '');
+                }
+
+            }
+            if (ret.buffer.endsWith('\0')) {
+
+                var msg = ret.buffer.split('\0')[0];
+                if (msg.length > 0) {
+                    //console.log('\n=======\n' + msg + '\n===============\n')
+                    var parsedmsg = this.parsemsg(msg);
+                    ret.buffer = ret.buffer.replace(msg + '\0', '');
+                    ret.emit(parsedmsg.cmd, parsedmsg);
                 }
 
             }
@@ -52,13 +73,17 @@ module.exports.createparser = function (sock) {
             cmd: parts[0],
             headers: {},
             body: '',
-            torawmsg: () => {
+            torawmsg: function () {
                 var msgasstr = this.cmd + '\n';
-                for (h in this.headers) {
-                    msgasstr += h + ':' + this.headers[h] + '\n';
+                for (h in parsedmsg.headers) {
+                    msgasstr += h + ':' + parsedmsg.headers[h] + '\n';
                 }
-                msgasstr += '\n' + this.body + '\0';
+                msgasstr += '\n' + parsedmsg.body + '\0';
                 return msgasstr;
+            },
+            tosinglelinestr: function () {
+                var msg = parsedmsg.torawmsg();
+                return msg.buffer.replace(/\n/g, ' ').replace(/\0/g, '\n');
             }
         };
         var i = 1;
