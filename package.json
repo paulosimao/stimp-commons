@@ -1,6 +1,6 @@
 {
   "name": "stimp-commons",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Stimp commons lib",
   "main": "index.js",
   "scripts": {

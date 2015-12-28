@@ -103,7 +103,23 @@ module.exports.createparser = function (sock) {
     };
     return ret;
 };
-
+module.exports.addmethodstomsg = function (msg) {
+    msg.torawmsg = function () {
+        var msgasstr = msg.cmd + '\n';
+        for (h in this.headers) {
+            msgasstr += h + ':' + this.headers[h] + '\n';
+        }
+        msgasstr += '\n' + this.body + '\0';
+        return msgasstr;
+    };
+    msg.addheader = function (h, v) {
+        if (ret.headers[h]) {
+            throw new Error('Header:' + h + ' already added to this message');
+        }
+        ret.headers[h] = v;
+    };
+    return msg;
+}
 module.exports.createmsg = function (cmd) {
     ret = {
         cmd: cmd,
@@ -117,22 +133,9 @@ module.exports.createmsg = function (cmd) {
         ret.headers['message-id'] = new uuid.v4();
     }
 
-    ret.torawmsg = function () {
-        var msgasstr = cmd + '\n';
-        for (h in this.headers) {
-            msgasstr += h + ':' + this.headers[h] + '\n';
-        }
-        msgasstr += '\n' + this.body + '\0';
-        return msgasstr;
-    };
-    ret.addheader = function (h, v) {
-        if (ret.headers[h]) {
-            throw new Error('Header:' + h + ' already added to this message');
-        }
-        ret.headers[h] = v;
-    };
-
+    ret = module.exports.addmethodstomsg(ret)
     ret.addheader('receipt', uuid.v4());
+
 
     return ret;
 };
